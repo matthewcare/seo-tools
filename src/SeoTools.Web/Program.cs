@@ -1,14 +1,12 @@
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using SeoTools.Core.Services.Redirects;
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
-namespace SeoTools
+namespace SeoTools.Web
 {
 	public class Program
 	{
@@ -17,7 +15,15 @@ namespace SeoTools
 			var builder = WebAssemblyHostBuilder.CreateDefault(args);
 			builder.RootComponents.Add<App>("#app");
 
+			
 			builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+			builder.Services.AddSingleton<IRedirectValidationService, RedirectValidationService>();
+			builder.Services.AddSingleton<IRedirectConfigGenerator, DotNetRedirectConfigGenerator>();
+			builder.Services.AddSingleton(provider =>
+			{
+				var config = provider.GetService<IConfiguration>();
+				return config.GetSection("RedirectValidator").Get<RedirectValidatorConfig>();
+			});
 
 			await builder.Build().RunAsync();
 		}
