@@ -1,0 +1,86 @@
+﻿@page "/redirect-validator"
+@using static SeoTools.Core.Extensions.RedirectErrorReasonExtensions
+@inherits Components.RedirectValidator
+
+<div class="container">
+
+	<div class="row">
+		<div class="col-12">
+			<h1>Redirect validator</h1>
+		</div>
+	</div>
+	
+	<div class="row">
+		<div class="col-12">
+			<textarea class="form-control" rows="10" @bind="@InputString" placeholder="Paste redirect CSV"></textarea>
+		</div>
+	</div>
+	
+	<div class="row mt-3" hidden="@(string.IsNullOrEmpty(DotNetOutput))">
+		<div class="col-12">
+			<textarea class="form-control" rows="10" value="@DotNetOutput" placeholder=".NET output"></textarea>
+		</div>
+	</div>
+	
+	<div class="row mt-3">
+		<div class="col-12">
+			<button type="button" class="btn btn-dark" @onclick="Process">Process</button>
+			<button type="button" class="btn btn-dark" @onclick="() => OnlyShowErrors = !OnlyShowErrors" hidden="@Output.All(x => x.Success)">
+				<span hidden="@(!OnlyShowErrors)">Show all</span>
+				<span hidden="@OnlyShowErrors">Show errors</span>
+			</button>
+			<button type="button" class="btn btn-dark" @onclick="RemoveErrors" hidden="@Output.All(x => x.Success)">Remove Errors</button>
+			<button type="button" class="btn btn-dark" @onclick="DotNetDownload" hidden="@(!Output.Any())">.NET Download</button>
+		</div>
+	</div>
+
+	<div class="row mt-3">
+		<div class="col-12">
+			<div class="bg-light p-3">
+				<p class="@(Output.Count(x => x.Success) == Output.Count ? "text-success" : "text-danger")">
+					@Output.Count(x => x.Success) valid out of @Output.Count (@(Output.Count - Output.Count(x => x.Success)) invalid)
+				</p>
+				@if (Suggestions.Any())
+				{
+					<p class="m-0">
+						@foreach (var suggestion in Suggestions)
+						{
+							@suggestion <br />
+						}
+					</p>
+				}
+			</div>
+		</div>
+	</div>
+
+	<div class="row mt-3">
+        <div class="col-12">
+            <table class="table table-bordered table-sm">
+                <thead>
+                <tr>
+                    <th>Line</th>
+                    <th>Redirecting From</th>
+                    <th>Redirecting To</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in Output)
+                {
+                    <tr class="@(item.Success ? null : "table-danger")" hidden="@(item.Success && OnlyShowErrors)">
+                        <td>@item.LineNumber</td>
+                        @if (item.Success)
+                        {
+                            <td>@item.FromUri</td>
+                            <td>@item.ToUri</td>
+                        }
+                        else
+                        {
+                            <td colspan="2">@string.Join(", ", item.ErrorReasons.Select(x => x.ToDisplay()))</td>
+                        }
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
