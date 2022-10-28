@@ -1,0 +1,33 @@
+﻿@page "/site-audit"
+@inherits Components.SiteAudit
+
+<MudGrid>
+
+    <MudItem xs="12">
+        <MudText Typo="Typo.h3">Site Checker</MudText>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudItem xs="6">
+            <MudTextField @bind-Value="InputString" Label="Site URL" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true"></MudTextField>
+        </MudItem>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
+            <MudButton Variant="Variant.Outlined" OnClick="TestUrlAsync" Size="Size.Medium">Test All</MudButton>
+            <MudButton>Test Robots</MudButton>
+            <MudButton>Test Another</MudButton>
+        </MudButtonGroup>
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudTextField T="string" Label="Output" Variant="Variant.Outlined" Text="@RobotsContent" Lines="3" />
+    </MudItem>
+
+
+    <MudItem xs="6">
+        <MudTextField T="string" Label="Output" Variant="Variant.Outlined" Text="@SitemapContent" Lines="3" />
+    </MudItem>
+
+</MudGrid>

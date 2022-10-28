@@ -16,7 +16,7 @@ namespace SeoTools.Core.Services.Redirects
 				await streamWriter.WriteLineAsync($"\t\t<add key=\"{redirect.FromUri}\" value=\"{redirect.ToUri}\" />");
 			}
 
-			await streamWriter.WriteLineAsync("\t</rewriteMaps>");
+			await streamWriter.WriteLineAsync("\t</rewriteMap>");
 			await streamWriter.WriteLineAsync("</rewriteMaps>");
 		}
 	}

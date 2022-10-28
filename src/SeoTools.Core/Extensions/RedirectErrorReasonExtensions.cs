@@ -6,28 +6,19 @@ namespace SeoTools.Core.Extensions
 	public static class RedirectErrorReasonExtensions
 	{
 		public static string ToDisplay(this RedirectErrorReason reason)
-		{
-			switch (reason)
-			{
-				case RedirectErrorReason.IncorrectFormat:
-					return "This line is in the incorrect format";
-				case RedirectErrorReason.InvalidFromUri:
-					return "The \"from\" URI is invalid";
-				case RedirectErrorReason.InvalidToUri:
-					return "The \"to\" URI is invalid";
-				case RedirectErrorReason.InvalidFromExtension:
-					return "The \"from\" URI has an invalid extension";
-				case RedirectErrorReason.InvalidToExtension:
-					return "The \"to\" URI has an invalid extension";
-				case RedirectErrorReason.InvalidDestination:
-					return "The destination URI is invalid";
-				case RedirectErrorReason.DuplicateDetected:
-					return "This redirect exists more than once";
-				case RedirectErrorReason.RedirectingToSelf:
-					return "This is redirecting to itself";
-				default:
-					throw new ArgumentOutOfRangeException(nameof(reason), reason, null);
-			}
-		}
+        {
+            return reason switch
+            {
+                RedirectErrorReason.IncorrectFormat => "This line is in the incorrect format",
+                RedirectErrorReason.InvalidFromUri => "The \"from\" URI is invalid",
+                RedirectErrorReason.InvalidToUri => "The \"to\" URI is invalid",
+                RedirectErrorReason.InvalidFromExtension => "The \"from\" URI has an invalid extension",
+                RedirectErrorReason.InvalidToExtension => "The \"to\" URI has an invalid extension",
+                RedirectErrorReason.InvalidDestination => "The destination URI is invalid",
+                RedirectErrorReason.DuplicateDetected => "This redirect exists more than once",
+                RedirectErrorReason.RedirectingToSelf => "This is redirecting to itself",
+                _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, null)
+            };
+        }
 	}
 }

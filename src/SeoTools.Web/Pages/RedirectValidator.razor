@@ -1,86 +1,181 @@
 ﻿@page "/redirect-validator"
 @using static SeoTools.Core.Extensions.RedirectErrorReasonExtensions
+@using SeoTools.Core.Services.Redirects
 @inherits Components.RedirectValidator
 
-<div class="container">
+@code {
+    private IEnumerable<string> MaxCharacters(string ch)
+    {
+        if (!string.IsNullOrEmpty(ch) && 10000 < ch.Length)
+            yield return "Please use the upload for larger ";
+    }
 
-	<div class="row">
-		<div class="col-12">
-			<h1>Redirect validator</h1>
-		</div>
-	</div>
-	
-	<div class="row">
-		<div class="col-12">
-			<textarea class="form-control" rows="10" @bind="@InputString" placeholder="Paste redirect CSV"></textarea>
-		</div>
-	</div>
-	
-	<div class="row mt-3" hidden="@(string.IsNullOrEmpty(DotNetOutput))">
-		<div class="col-12">
-			<textarea class="form-control" rows="10" value="@DotNetOutput" placeholder=".NET output"></textarea>
-		</div>
-	</div>
-	
-	<div class="row mt-3">
-		<div class="col-12">
-			<button type="button" class="btn btn-dark" @onclick="Process">Process</button>
-			<button type="button" class="btn btn-dark" @onclick="() => OnlyShowErrors = !OnlyShowErrors" hidden="@Output.All(x => x.Success)">
-				<span hidden="@(!OnlyShowErrors)">Show all</span>
-				<span hidden="@OnlyShowErrors">Show errors</span>
-			</button>
-			<button type="button" class="btn btn-dark" @onclick="RemoveErrors" hidden="@Output.All(x => x.Success)">Remove Errors</button>
-			<button type="button" class="btn btn-dark" @onclick="DotNetDownload" hidden="@(!Output.Any())">.NET Download</button>
-		</div>
-	</div>
+    private bool Clearing = false;
+    private static string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mt-2 mud-width-full mud-height-full";
+    private string DragClass = DefaultDragClass;
+    private List<string> fileNames = new List<string>();
 
-	<div class="row mt-3">
-		<div class="col-12">
-			<div class="bg-light p-3">
-				<p class="@(Output.Count(x => x.Success) == Output.Count ? "text-success" : "text-danger")">
-					@Output.Count(x => x.Success) valid out of @Output.Count (@(Output.Count - Output.Count(x => x.Success)) invalid)
-				</p>
-				@if (Suggestions.Any())
-				{
-					<p class="m-0">
-						@foreach (var suggestion in Suggestions)
-						{
-							@suggestion <br />
-						}
-					</p>
-				}
-			</div>
-		</div>
-	</div>
+    private void OnInputFileChanged(InputFileChangeEventArgs e)
+    {
+        ClearDragClass();
+        var files = e.GetMultipleFiles();
+        foreach (var file in files)
+        {
+            fileNames.Add(file.Name);
+        }
+    }
 
-	<div class="row mt-3">
-        <div class="col-12">
-            <table class="table table-bordered table-sm">
+    private async Task Clear()
+    {
+        Clearing = true;
+        fileNames.Clear();
+        ClearDragClass();
+        await Task.Delay(100);
+        Clearing = false;
+    }
+    private void Upload()
+    {
+
+    }
+
+    private void SetDragClass()
+    {
+        DragClass = $"{DefaultDragClass} mud-border-primary";
+    }
+
+    private void ClearDragClass()
+    {
+        DragClass = DefaultDragClass;
+    }
+}
+
+<MudText Typo="Typo.h3">Redirect Validator</MudText>
+
+<MudGrid>
+    <MudItem xs="6">
+        <MudTextField T="string"
+                      Label="Paste redirect CSV"
+                      Variant="Variant.Outlined"
+                      @bind-Value="InputString"
+                      Counter="10000"
+                      MaxLength="10001"
+                      Immediate="true"
+                      Class="mt-2"
+                      Validation="@(new Func<string, IEnumerable<string>>(MaxCharacters))"
+                      Lines="10" />
+    </MudItem>
+    <MudItem xs="6">
+        <MudPaper @ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass" Height="177px" Outlined="true" Class="@DragClass">
+            @if (!Clearing)
+            {
+                <InputFile OnChange="OnInputFileChanged" multiple class="absolute mud-width-full mud-height-full overflow-hidden z-2" style="opacity:0;" />
+            }
+            <MudText Typo="Typo.h6">Drag and drop files here or click</MudText>
+            @foreach (var file in fileNames)
+            {
+                <MudChip Color="Color.Dark" Text="@file" />
+            }
+        </MudPaper>
+        <MudToolBar DisableGutters="true" Class="gap-4">
+            <MudButton OnClick="Upload" Disabled="@(!fileNames.Any())" Color="Color.Primary" Variant="Variant.Filled">Upload</MudButton>
+            <MudButton OnClick="Clear" Disabled="@(!fileNames.Any())" Color="Color.Error" Variant="Variant.Filled">Clear</MudButton>
+        </MudToolBar>
+    </MudItem>
+</MudGrid>
+
+<MudTabs Elevation="2"
+         Rounded="true"
+         ApplyEffectsToContainer="true"
+         PanelClass="pa-6"
+         Class="@(Output.Count == 0 ? "invisible mt-6" : "mt-6")">
+    <MudTabPanel Text="Summary">
+        <MudText Typo="Typo.body1">
+            @Output.Count(x => x.Success) valid out of @Output.Count (@(Output.Count - Output.Count(x => x.Success)) invalid)
+        </MudText>
+        @if (Suggestions.Any())
+        {
+            <MudText Typo="Typo.body1">
+                @foreach (var suggestion in Suggestions)
+                {
+                    @suggestion
+                    <br />
+                }
+            </MudText>
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="Formatted View">
+        <MudTable ServerData="new Func<TableState, Task<TableData<RedirectValidationResult>>>(GetTableDataAsync)" Dense="true" Style="overflow-x: auto;">
+            <ToolBarContent>
+                <MudSpacer />
+                <MudTextField T="string" ValueChanged="OnSearch" Placeholder="Search" Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+
+            <HeaderContent>
+                <MudTh>Line</MudTh>
+                <MudTh>Redirecting From</MudTh>
+                <MudTh>Redirecting To</MudTh>
+            </HeaderContent>
+
+            <RowTemplate>
+                <MudTd>@context.LineNumber</MudTd>
+                @if (context.Success)
+                {
+                    <MudTd>@context.FromUri</MudTd>
+                    <MudTd>@context.ToUri</MudTd>
+                }
+                else
+                {
+                    <MudTd colspan="2">@string.Join(", ", context.ErrorReasons.Select(x => x.ToDisplay()))</MudTd>
+                }
+            </RowTemplate>
+
+            <NoRecordsContent>
+                <MudText>No matching records found</MudText>
+            </NoRecordsContent>
+
+            <LoadingContent>
+                <MudText>Loading...</MudText>
+            </LoadingContent>
+
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+        </MudTable>
+    </MudTabPanel>
+
+    <MudTabPanel Text="Issues" BadgeData="TotalErrors" BadgeColor="Color.Error">
+        @if (TotalErrors == 0)
+        {
+            <MudText>There are no issues to report!</MudText>
+        }
+        else
+        {
+            <MudSimpleTable Dense="true" Style="overflow-x: auto;">
                 <thead>
-                <tr>
-                    <th>Line</th>
-                    <th>Redirecting From</th>
-                    <th>Redirecting To</th>
-                </tr>
+                    <tr>
+                        <th>Line</th>
+                        <th>Issue</th>
+                        <th></th>
+                    </tr>
                 </thead>
                 <tbody>
-                @foreach (var item in Output)
-                {
-                    <tr class="@(item.Success ? null : "table-danger")" hidden="@(item.Success && OnlyShowErrors)">
-                        <td>@item.LineNumber</td>
-                        @if (item.Success)
-                        {
-                            <td>@item.FromUri</td>
-                            <td>@item.ToUri</td>
-                        }
-                        else
-                        {
-                            <td colspan="2">@string.Join(", ", item.ErrorReasons.Select(x => x.ToDisplay()))</td>
-                        }
-                    </tr>
-                }
+                    @foreach (var item in Output.Where(x => !x.Success))
+                    {
+                        <tr>
+                            <td>@item.LineNumber</td>
+                            <td>@string.Join(", ", item.ErrorReasons.Select(x => x.ToDisplay()))</td>
+                            <td>Remove</td>
+                        </tr>
+                    }
                 </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+            </MudSimpleTable>
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="Output" OnClick="GenerateOutput">
+        <MudItem xs="12">
+            <MudTextField T="string" Label=".NET output" Variant="Variant.Outlined" Value="@DotNetOutput" Lines="20" />
+        </MudItem>
+    </MudTabPanel>
+</MudTabs>
+
